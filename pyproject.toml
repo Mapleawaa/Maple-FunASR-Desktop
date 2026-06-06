@@ -46,6 +46,6 @@ hiddenimports = [
 ]
 
 [dependency-groups]
-dev = [
+build = [
     "pyinstaller>=6.0",
 ]
