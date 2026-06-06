@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.spec.lock
+.venv/
+venv/
+env/
+uv.lock
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+ui/resources/ffmpeg.exe

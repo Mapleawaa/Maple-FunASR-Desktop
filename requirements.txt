@@ -1,0 +1,13 @@
+# 推荐使用 uv 管理依赖：
+#   uv sync --group build
+#
+# 或使用 pip：
+#   pip install -r requirements.txt
+
+PyQt6>=6.5
+qfluentwidgets>=1.5
+funasr>=1.3
+torch>=2.0
+torchaudio>=2.0
+requests
+pyinstaller>=6.0

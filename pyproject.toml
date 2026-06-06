@@ -1,0 +1,51 @@
+[project]
+name = "maple-funasr-desktop"
+version = "1.0.0"
+description = "FunASR Windows 桌面端语音转写工具，支持说话人分离"
+readme = "README.md"
+license = { text = "GPL-3.0-only" }
+requires-python = ">=3.10"
+
+dependencies = [
+    "PyQt6>=6.5",
+    "qfluentwidgets>=1.5",
+    "funasr>=1.3",
+    "torch>=2.0",
+    "torchaudio>=2.0",
+    "requests",
+]
+
+[project.optional-dependencies]
+xpu = ["intel-extension-for-pytorch"]
+build = ["pyinstaller>=6.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*", "core*", "ui*"]
+
+[tool.setuptools.package-data]
+"ui.resources" = ["*.exe", "*.ico", "LICENSE.ffmpeg"]
+
+[tool.pyinstaller]
+python_path = "."
+console = false
+name = "FunASR-Desktop"
+hiddenimports = [
+    "funasr",
+    "funasr.models",
+    "funasr.auto.auto_model",
+    "qfluentwidgets",
+    "PyQt6.QtCore",
+    "PyQt6.QtGui",
+    "PyQt6.QtWidgets",
+    "torch",
+    "torchaudio",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pyinstaller>=6.0",
+]
