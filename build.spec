@@ -1,11 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 import sys
 import os
-from pathlib import Path
 
 block_cipher = None
 
-resources_dir = os.path.join(os.path.dirname(__file__), "ui", "resources")
+resources_dir = os.path.join(os.getcwd(), "ui", "resources")
 ffmpeg_path = os.path.join(resources_dir, "ffmpeg.exe")
 icon_path = os.path.join(resources_dir, "project-icon.jpg")
 license_path = os.path.join(resources_dir, "LICENSE.ffmpeg")
