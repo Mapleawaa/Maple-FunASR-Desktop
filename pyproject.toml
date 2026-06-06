@@ -48,4 +48,5 @@ hiddenimports = [
 [dependency-groups]
 build = [
     "pyinstaller>=6.0",
+    "pillow>=10.0",
 ]
