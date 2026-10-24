@@ -41,7 +41,7 @@ jobs:
       - name: 安装轻量依赖（不含 torch / funasr）
         run: |
           uv venv --python ${{ env.PYTHON_VERSION }}
-          uv pip install PyQt6 psutil flask requests
+          uv pip install PyQt6 PyQt6-Fluent-Widgets psutil flask requests
 
       - name: Qt 运行库（headless 下导入 PyQt6 需要）
         run: |
@@ -52,7 +52,27 @@ jobs:
       - name: 语法编译
         run: uv run --no-sync python -m compileall -q app core ui tests main.py
 
-      - name: 模块导入
+      - name: 核心模块导入（不需要 Qt）
+        run: |
+          uv run --no-sync python - <<'PY'
+          import sys
+          sys.path.insert(0, '.')
+
+          from app.runtime_env import detect_runtime, choose_gui_platform
+          from app.utils import find_ffmpeg
+          from app.web_console.server import create_app
+          from core.downloader import MODEL_BUNDLES, bundle_status
+          from core.exporter import export_result
+          from core.hardware_checker import detect_all, estimate_speeds, pick_best_device
+          from core.hardware_monitor import HardwareMonitorSampler
+          from core.pipeline import run_pipeline
+          from core.torch_env import get_torch_env
+
+          assert "sensevoice" in MODEL_BUNDLES
+          print("core modules import OK")
+          PY
+
+      - name: GUI 模块导入（headless，不创建窗口）
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
@@ -60,27 +80,14 @@ jobs:
           import sys
           sys.path.insert(0, '.')
 
-          # 无界面 / 核心模块
           from app.settings import Settings
-          from app.utils import find_ffmpeg
-          from app.runtime_env import detect_runtime, choose_gui_platform
-          from app.web_console.server import create_app
-          from core.downloader import MODEL_BUNDLES, bundle_status
-          from core.hardware_checker import detect_all, estimate_speeds, pick_best_device
-          from core.hardware_monitor import HardwareMonitorSampler
-          from core.pipeline import run_pipeline
-          from core.torch_env import get_torch_env
-          from core.exporter import export_result
-
-          # GUI 模块（headless 只导入，不创建窗口）
           import ui.tabs.transcribe_tab
           import ui.tabs.hardware_tab
           import ui.tabs.models_tab
           import ui.widgets.monitor_panel
           import app.main_window
 
-          assert "sensevoice" in MODEL_BUNDLES
-          print("All modules import OK")
+          print("GUI modules import OK")
           PY
 
   # ── WSL2 兼容性（模拟无 WSLg 的 WSL2）─────────────────────────────────
