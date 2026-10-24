@@ -220,8 +220,11 @@ jobs:
 
       - name: 基本可执行性检查
         run: |
-          ./dist/Maple-FunASR-Desktop --help >/dev/null 2>&1 || true
           ls -lh dist/
+          # CI 里没有显示服务：用 --gui --no-fallback 让它快速退出（预期返回 2），
+          # 并加 timeout 兜底，避免误走 Web 控制台后一直阻塞。
+          timeout 30 ./dist/Maple-FunASR-Desktop --gui --no-fallback \
+            && echo "未预期的成功" || echo "无显示环境下按预期退出（code=$?）"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
