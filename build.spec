@@ -10,6 +10,14 @@ icon_path = os.path.join(resources_dir, "project-icon.jpg")
 license_path = os.path.join(resources_dir, "LICENSE.ffmpeg")
 
 datas = []
+
+# HardwareMonitor 自带 LibreHardwareMonitorLib 程序集，需要一并打包
+try:
+    from PyInstaller.utils.hooks import collect_data_files
+    datas += collect_data_files("HardwareMonitor", include_py_files=True)
+except Exception:
+    pass
+
 if os.path.isfile(ffmpeg_path):
     datas.append((ffmpeg_path, "ui/resources"))
 if os.path.isfile(icon_path):
@@ -43,6 +51,8 @@ a = Analysis(
         "core.hardware_checker",
         "core.gpu_probe",
         "core.torch_env",
+        "core.hardware_monitor",
+        "ui.widgets.monitor_panel",
         "core.transcriber",
         "core.downloader",
         "core.download_worker",

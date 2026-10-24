@@ -13,6 +13,9 @@ dependencies = [
     "torch>=2.0",
     "torchaudio>=2.0",
     "requests",
+    "psutil>=5.9",
+    # Windows 下读取 CPU/GPU 温度、功耗等传感器（LibreHardwareMonitorLib 绑定）
+    "HardwareMonitor>=1.2; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]

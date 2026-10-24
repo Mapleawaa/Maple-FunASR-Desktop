@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 from qfluentwidgets import (
     CardWidget, StrongBodyLabel, CaptionLabel,
     PrimaryPushButton, ComboBox, SpinBox, TextBrowser,
-    InfoBar, InfoBarPosition, PushButton, ProgressRing, SegmentedWidget,
+    InfoBar, InfoBarPosition, PushButton, SegmentedWidget,
 )
 
 from app.worker import TranscribeWorker
@@ -21,6 +21,7 @@ from core.downloader import MODEL_BUNDLES, bundle_status
 from core.hardware_checker import detect_all, resolve_device
 from app.utils import keep_alive
 from core.transcriber import MODEL_REGISTRY, bundle_key_for
+from ui.widgets.monitor_panel import MonitorPanel
 
 
 class _DeviceWorker(QThread):
@@ -46,9 +47,7 @@ class TranscribeTab(QWidget):
         self._device_worker: _DeviceWorker | None = None
         self._devices_loaded = False
         self._device_options: dict[str, str] = {}
-        self._progress_timer = QTimer(self)
-        self._progress_timer.timeout.connect(self._tick_progress)
-        self._fake_progress = 0
+        self._had_error = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
@@ -142,22 +141,6 @@ class TranscribeTab(QWidget):
         self.cancel_btn.clicked.connect(self._cancel_transcribe)
         left_layout.addWidget(self.cancel_btn)
 
-        progress_row = QHBoxLayout()
-        progress_row.addStretch()
-        self.progress_ring = ProgressRing()
-        self.progress_ring.setRange(0, 100)
-        self.progress_ring.setValue(0)
-        self.progress_ring.setFixedSize(64, 64)
-        self.progress_ring.setVisible(False)
-        progress_row.addWidget(self.progress_ring)
-        progress_row.addStretch()
-        left_layout.addLayout(progress_row)
-
-        self.stage_label = CaptionLabel("")
-        self.stage_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.stage_label.setStyleSheet("color: #8a8a8a;")
-        left_layout.addWidget(self.stage_label)
-
         left_layout.addStretch()
         splitter.addWidget(left)
 
@@ -194,7 +177,11 @@ class TranscribeTab(QWidget):
 
         splitter.addWidget(right)
         splitter.setSizes([360, 640])
-        layout.addWidget(splitter)
+        layout.addWidget(splitter, 1)
+
+        # 任务开始后展开的监控区域（CPU / 内存 / GPU + 进度 + 日志）
+        self.monitor = MonitorPanel(self)
+        layout.addWidget(self.monitor)
 
         QTimer.singleShot(400, self.refresh_devices)
         QTimer.singleShot(600, self._update_model_hint)
@@ -320,14 +307,14 @@ class TranscribeTab(QWidget):
         self.transcribe_btn.setEnabled(False)
         self.transcribe_btn.setText("转写中…")
         self.cancel_btn.setVisible(True)
-        self.progress_ring.setVisible(True)
-        self.progress_ring.setValue(0)
-        self._fake_progress = 0
-        self.stage_label.setText("准备中…")
+        self._had_error = False
         device = self._selected_device()
         if device == "auto":
             device = resolve_device("auto")
-        self._progress_timer.start(700)
+
+        self.monitor.start_task()
+        self.monitor.log(f"文件：{os.path.basename(self.current_video)}")
+        self.monitor.log(f"模型：{self.model_combo.currentText()}　设备：{device}")
 
         self.worker = TranscribeWorker(
             video_path=self.current_video,
@@ -351,45 +338,32 @@ class TranscribeTab(QWidget):
         if self.worker is not None and self.worker.isRunning():
             self.worker.cancel()
             self.cancel_btn.setEnabled(False)
-            self.stage_label.setText("正在取消…")
-
-    def _tick_progress(self):
-        # FunASR 推理阶段没有细粒度回调，用缓慢爬升表示"仍在工作"
-        if self._fake_progress < 90:
-            self._fake_progress += 1
-            self.progress_ring.setValue(self._fake_progress)
+            self.monitor.log("已请求取消，等待当前步骤结束")
 
     def _on_progress(self, pct: int, stage: str):
-        self._fake_progress = pct
-        self.progress_ring.setValue(pct)
-        if stage:
-            self.stage_label.setText(f"{stage}…")
+        self.monitor.set_progress(pct, stage)
 
     def _on_log(self, msg: str):
-        if msg.startswith("[系统]") or msg.startswith("[错误]"):
-            self.stage_label.setText(msg)
+        self.monitor.log(msg)
 
     def _on_result(self, sentences: list[dict]):
         self.current_result = sentences
         self._display_results(sentences)
-        self.progress_ring.setValue(100)
+        self.monitor.set_progress(100, "完成")
 
     def _on_error(self, msg: str, hint: str):
+        self._had_error = True
         parent = self.window()
         content = f"{msg}\n{hint}" if hint else msg
         InfoBar.error("转写失败", content, parent=parent, duration=8000,
                       position=InfoBarPosition.TOP)
-        self.stage_label.setText("失败：" + msg)
+        self.monitor.log(f"[错误] {msg}" + (f"　{hint}" if hint else ""))
         self._reset_buttons()
 
     def _on_finished(self):
         self._reset_buttons()
-        self._progress_timer.stop()
-        if not self.current_result:
-            QTimer.singleShot(1500, lambda: self.progress_ring.setVisible(False))
-        else:
-            self.stage_label.setText("完成")
-            QTimer.singleShot(2500, lambda: self.progress_ring.setVisible(False))
+        self.monitor.stop_task(not self._had_error,
+                               "" if not self._had_error else "转写失败")
 
     def _reset_buttons(self):
         self.transcribe_btn.setEnabled(True)
@@ -441,6 +415,7 @@ class TranscribeTab(QWidget):
     # ─────────── 收尾 ───────────
 
     def shutdown(self):
+        self.monitor.shutdown()
         worker = self.worker
         if worker is not None and worker.isRunning():
             worker.cancel()

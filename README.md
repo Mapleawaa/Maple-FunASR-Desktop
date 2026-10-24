@@ -21,6 +21,16 @@ multi-format export, and hardware-accelerated inference
 - 失败可诊断：网络 / 认证 / 仓库不存在 / 磁盘不足分别给出处理建议；
   90 秒没有新数据判定为网络阻塞并自动中止。
 
+### 任务监控（“转写”页）
+
+- 任务开始后自动展开监控区：CPU / 内存 / GPU 占用条 + 数值与温度、显存、功耗。
+- 数据源优先 **HardwareMonitor**（LibreHardwareMonitorLib），在 Linux / WSL /
+  未安装 .NET / 非管理员时自动降级为 psutil + `nvidia-smi` / AMD sysfs，
+  监控不可用也不会影响转写。
+- 采样在独立线程每秒一次，同时展示任务进度（阶段 + 百分比 + 用时）与带时间
+  戳的处理日志。
+- CPU 温度等部分传感器需要以管理员身份运行；界面会标注"需要管理员权限"。
+
 ### 硬件检测与 PyTorch 版本（“硬件”页）
 
 - 先用注册表 / `nvidia-smi` / sysfs 读**真实硬件**，再与 PyTorch 构建类型
