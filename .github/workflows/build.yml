@@ -2,7 +2,8 @@ name: Build & Test
 
 on:
   push:
-    branches: [main]
+    # 主干 + 常见修复/功能分支都跑 CI，便利用户在分支上就看到结果
+    branches: [main, "fix/**", "feat/**", "feature/**"]
     tags: ["v*"]
   pull_request:
     branches: [main]
