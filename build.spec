@@ -25,6 +25,13 @@ if os.path.isfile(icon_path):
 if os.path.isfile(license_path):
     datas.append((license_path, "ui/resources"))
 
+# Web 控制台前端资源（WSLg 不可用时的备用入口）
+web_console_dir = os.path.join(os.getcwd(), "app", "web_console")
+datas += [
+    (os.path.join(web_console_dir, "templates"), "app/web_console/templates"),
+    (os.path.join(web_console_dir, "static"), "app/web_console/static"),
+]
+
 a = Analysis(
     ['main.py'],
     pathex=[],
@@ -52,6 +59,14 @@ a = Analysis(
         "core.gpu_probe",
         "core.torch_env",
         "core.hardware_monitor",
+        "core.pipeline",
+        "app.runtime_env",
+        "app.web_console",
+        "app.web_console.server",
+        "app.web_console.service",
+        "flask",
+        "jinja2",
+        "werkzeug",
         "ui.widgets.monitor_panel",
         "core.transcriber",
         "core.downloader",

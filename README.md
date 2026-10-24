@@ -31,6 +31,35 @@ multi-format export, and hardware-accelerated inference
   戳的处理日志。
 - CPU 温度等部分传感器需要以管理员身份运行；界面会标注"需要管理员权限"。
 
+### WSL / WSLg 与 Web 控制台
+
+- **环境识别**：通过 `WSL_DISTRO_NAME`、`/proc/version`、`/mnt/wslg` 判断 WSL
+  与 WSLg 是否就绪。
+- **WSLg 显示**：优先使用 `xcb`（WSLg 自带 XWayland），失败再依次尝试
+  `wayland` 与软件渲染。探测在**子进程**中执行 —— Qt 平台插件缺失会让进程
+  直接 abort，不能放在主进程里试。
+- **兜底入口**：WSLg 不可用、或 GUI 启动失败时，自动启动 Flask Web 控制台
+  （`http://127.0.0.1:8420`），浏览器里即可上传文件、转写、导出结果，
+  同时可以看 CPU/内存/GPU 曲线式的实时负载与处理日志。
+- **命令行**：
+
+  ```bash
+  python main.py                     # 自动：能显示 GUI 就 GUI，否则 Web
+  python main.py --web               # 强制 Web 控制台
+  python main.py --gui               # 强制 GUI，失败直接退出（不降级）
+  python main.py --web --host 0.0.0.0 --port 8420   # 让局域网可访问
+  python -m app.web_console.server --port 8420      # 只跑 Web 端（无 Qt）
+  ```
+
+- WSL 里若提示缺少 xcb 依赖：
+
+  ```bash
+  sudo apt install libxcb-cursor0 libxkbcommon-x11-0 libxcb-xinerama0
+  ```
+
+- 安全提示：Web 控制台默认只监听 `127.0.0.1` 且没有鉴权，使用
+  `--host 0.0.0.0` 暴露到局域网前请自行评估。
+
 ### 硬件检测与 PyTorch 版本（“硬件”页）
 
 - 先用注册表 / `nvidia-smi` / sysfs 读**真实硬件**，再与 PyTorch 构建类型

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maple-FunASR · Web 控制台</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">ASR</span>
+    <div>
+      <h1>Maple-FunASR 控制台</h1>
+      <p class="sub">WSLg 不可用时的备用入口 · 服务端转写</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="tag" id="runtime-tag">{{ runtime_label }}</span>
+    <span class="dot" id="conn-dot"></span>
+    <span class="conn" id="conn-text">连接中…</span>
+  </div>
+</header>
+
+{% if startup_note %}
+<div class="notice" id="startup-note">
+  <strong>提示：</strong>{{ startup_note }}
+</div>
+{% endif %}
+
+<main>
+  <!-- 监控 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>实时负载</h2>
+      <span class="muted" id="metrics-source">读取中…</span>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-top"><span>CPU</span><b id="cpu-pct">--</b></div>
+        <div class="bar"><i id="cpu-bar"></i></div>
+        <div class="metric-detail" id="cpu-detail"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-top"><span>内存</span><b id="ram-pct">--</b></div>
+        <div class="bar"><i id="ram-bar"></i></div>
+        <div class="metric-detail" id="ram-detail"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-top"><span>GPU</span><b id="gpu-pct">--</b></div>
+        <div class="bar"><i id="gpu-bar"></i></div>
+        <div class="metric-detail" id="gpu-detail"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- 转写 -->
+    <section class="card">
+      <div class="card-head">
+        <h2>语音转写</h2>
+        <span class="muted" id="job-state">空闲</span>
+      </div>
+
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept="audio/*,video/*">
+        <span class="dz-icon">＋</span>
+        <span class="dz-title" id="dz-title">点击选择或拖拽音视频文件</span>
+        <span class="dz-hint">支持 wav / mp3 / m4a / mp4 / mkv 等，单个文件不超过 {{ max_upload_mb }} MB</span>
+      </label>
+
+      <div class="form-row">
+        <label>模型
+          <select id="model-select"></select>
+        </label>
+        <label>设备
+          <select id="device-select">
+            <option value="auto">自动（推荐）</option>
+            <option value="cpu">CPU</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row small">
+        <label>说话人上限
+          <input type="number" id="max-spk" value="0" min="0" max="20">
+        </label>
+        <label>VAD 分段（秒）
+          <input type="number" id="vad-seg" value="30" min="5" max="120">
+        </label>
+        <label>批大小
+          <input type="number" id="batch-size" value="1" min="1" max="16">
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="start-btn" disabled>开始转写</button>
+        <button class="btn ghost" id="cancel-btn" disabled>取消</button>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="bar thick"><i id="job-bar"></i></div>
+        <div class="progress-meta">
+          <span id="job-stage">等待开始</span>
+          <span id="job-elapsed"></span>
+        </div>
+      </div>
+
+      <div class="card-head sub-head">
+        <h3>处理日志</h3>
+        <span class="muted" id="log-count"></span>
+      </div>
+      <pre class="log" id="log"></pre>
+    </section>
+
+    <!-- 结果 + 模型 -->
+    <section class="col">
+      <section class="card">
+        <div class="card-head">
+          <h2>转写结果</h2>
+          <span class="muted" id="result-count">0 条</span>
+        </div>
+        <div class="exports" id="exports">
+          {% for fmt in export_formats %}
+          <a class="btn small" href="/api/result?fmt={{ fmt }}" data-fmt="{{ fmt }}">{{ fmt }}</a>
+          {% endfor %}
+        </div>
+        <div class="table-wrap">
+          <table class="result-table">
+            <thead>
+              <tr><th>说话人</th><th>时间</th><th>文本</th></tr>
+            </thead>
+            <tbody id="result-body">
+              <tr><td colspan="3" class="empty">暂无结果</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>模型</h2>
+          <select id="hub-select" class="inline-select">
+            <option value="ms">ModelScope</option>
+            <option value="hf">HuggingFace</option>
+          </select>
+        </div>
+        <div id="model-list" class="model-list"></div>
+      </section>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <span>Maple-FunASR-Desktop · Web 控制台（仅本机访问）</span>
+  <span id="foot-note">{{ startup_note }}</span>
+</footer>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

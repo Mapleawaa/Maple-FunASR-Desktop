@@ -13,4 +13,6 @@ requests
 psutil>=5.9
 # Windows 下提供 CPU/GPU 温度、功耗等更完整的传感器
 HardwareMonitor>=1.2; sys_platform == "win32"
+# WSLg 不可用时的备用 Web 控制台
+Flask>=3.0
 pyinstaller>=6.0

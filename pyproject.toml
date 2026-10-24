@@ -16,6 +16,8 @@ dependencies = [
     "psutil>=5.9",
     # Windows 下读取 CPU/GPU 温度、功耗等传感器（LibreHardwareMonitorLib 绑定）
     "HardwareMonitor>=1.2; sys_platform == 'win32'",
+    # WSLg 不可用时的备用 Web 控制台
+    "Flask>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +35,7 @@ include = ["app*", "core*", "ui*"]
 
 [tool.setuptools.package-data]
 "ui.resources" = ["*.exe", "*.ico", "LICENSE.ffmpeg"]
+"app.web_console" = ["templates/*.html", "static/*.css", "static/*.js"]
 
 [tool.pyinstaller]
 python_path = "."
