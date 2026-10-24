@@ -16,7 +16,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-xpu = ["intel-extension-for-pytorch"]
+# Intel XPU 现在由 PyTorch 官方 xpu 轮子直接支持，不再需要 intel-extension-for-pytorch：
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/xpu
+xpu = []
 build = ["pyinstaller>=6.0"]
 
 [build-system]

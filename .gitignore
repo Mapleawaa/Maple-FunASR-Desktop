@@ -15,3 +15,6 @@ uv.lock
 Thumbs.db
 .DS_Store
 ui/resources/ffmpeg.exe
+
+# Agent workspace (memory / temp screenshots)
+.workbuddy/
