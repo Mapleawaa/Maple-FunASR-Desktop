@@ -1,5 +1,5 @@
-# Maple-FunASR-Desktop Build Script
-# Run from the win/ directory
+# Maple-FunASR-Desktop Build Script (Windows)
+# 在仓库根目录执行：.\build.ps1
 
 Write-Host "=== FunASR Desktop Build ===" -ForegroundColor Cyan
 
@@ -42,4 +42,4 @@ Set-Location $PSScriptRoot
 pyinstaller build.spec
 
 Write-Host "=== Build complete! ===" -ForegroundColor Cyan
-Write-Host "Output: $PSScriptRoot\dist\FunASR-Desktop\" -ForegroundColor Green
+Write-Host "Output: $PSScriptRoot\dist\Maple-FunASR-Desktop.exe" -ForegroundColor Green

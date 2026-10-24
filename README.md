@@ -1,10 +1,29 @@
 # Maple-FunASR-Desktop
 
+[![Build & Test](https://github.com/Mapleawaa/Maple-FunASR-Desktop/actions/workflows/build.yml/badge.svg)](https://github.com/Mapleawaa/Maple-FunASR-Desktop/actions/workflows/build.yml)
+
 A FunASR desktop application based on QFluentWidgets.
 
 Supports speech-to-text transcription with speaker diarization,
 multi-format export, and hardware-accelerated inference
 (CUDA / ROCm / Intel XPU / CPU).
+
+Runs on **Windows 10/11**, **WSL2**（有 WSLg 时原生窗口，没有时自动切到内置
+Web 控制台）和 **Linux**。
+
+## 支持平台
+
+| 平台 | 状态 | GUI | 加速 | 说明 |
+|------|------|-----|------|------|
+| Windows 10 / 11 (x64) | ✅ 官方构建 | 原生窗口 | CUDA / Intel XPU / CPU | 发布页 `*-windows-x64.zip` |
+| **WSL2 (Ubuntu 22.04+)** | ✅ 支持 | **WSLg**（XWayland / Wayland） | CUDA / Intel XPU（透传） / CPU | 无 WSLg 时自动切换 Web 控制台 |
+| WSL1 | ⚠️ 仅 Web 控制台 | ❌ | CPU | 没有 WSLg，建议升级到 WSL2 |
+| Linux (x86_64) | ✅ 支持 | X11 / Wayland | CUDA / ROCm / Intel XPU / CPU | 发布页 `*-linux-x86_64.tar.gz`，也可源码运行 |
+
+- **WSL2 上推荐源码运行**（`uv sync && uv run python main.py`），能直接复用 WSL 里的
+  CUDA / ROCm 环境；发布页的 Linux 包内置 CPU 版 PyTorch，开箱即用但不含 GPU 运行时。
+- WSL2 的 GPU 加速依赖 Windows 侧驱动 + WSL 内对应版本的 PyTorch，本程序只在
+  “硬件”页如实报告当前可用性，不会替用户静默安装。
 
 ## 功能与实现要点
 
@@ -100,22 +119,55 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 - **FunASR** — MIT License — https://github.com/modelscope/FunASR
 - **PyQt6** — GPL v3 — https://www.qt.io
 - **QFluentWidgets** — GPL v3 — https://github.com/zhiyiYo/QFluentWidgets
+- **LibreHardwareMonitor / HardwareMonitor** — MPL-2.0 — https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
+- **Flask** — BSD-3-Clause — https://flask.palletsprojects.com
 - **ModelScope** — https://modelscope.cn
 - **TUNA Mirrors** — https://mirrors.tuna.tsinghua.edu.cn
 
 ## Build
 
+仓库根目录即项目根目录（早期文档里的 `cd win` 已不再需要）。
+
+### Windows
+
 ```bash
-# With uv (recommended)
-cd win
+# 推荐 uv
 uv sync --group build
 uv run python main.py
-uv run pyinstaller build.spec
+uv run pyinstaller build.spec        # 产物：dist/Maple-FunASR-Desktop.exe
 
-# With pip
-cd win
+# 或用 pip
 pip install -r requirements.txt
 python main.py
-pip install pyinstaller
 pyinstaller build.spec
 ```
+
+### Linux / WSL2
+
+```bash
+# 源码运行（WSL2 下建议这种方式，可直接复用 WSL 里的 CUDA/ROCm）
+sudo apt install ffmpeg libxcb-cursor0 libxkbcommon-x11-0
+uv sync
+uv run python main.py
+
+# 构建单文件可执行程序（CI 里用 CPU 版 PyTorch 控制体积）
+uv sync --group build --no-install-project \
+  --no-install-package torch --no-install-package torchaudio
+uv pip install --index-url https://download.pytorch.org/whl/cpu torch torchaudio
+uv run pyinstaller build.spec        # 产物：dist/Maple-FunASR-Desktop
+```
+
+`build.spec` 会自动区分平台：Windows 打包 `ffmpeg.exe` 与图标，Linux/WSL2
+打包 `ffmpeg`、忽略 Windows 图标；找不到 ffmpeg 时跳过（应用会提示安装）。
+
+### CI
+
+`.github/workflows/build.yml` 依次执行：
+
+| Job | 内容 |
+|-----|------|
+| `Lint & Import Check` | 全量语法编译 + 核心/GUI 模块导入（headless，不装 torch） |
+| `WSL2 Compatibility (no WSLg)` | 用 `WSL_DISTRO_NAME` 模拟无 WSLg 的 WSL2，跑 `tests/test_smoke.py`（运行时判定、降级逻辑、Web 控制台接口） |
+| `Build Windows` | PyInstaller 打包 Windows exe |
+| `Build Linux / WSL2` | PyInstaller 打包 Linux 可执行文件（CPU 版 PyTorch + 内置 ffmpeg） |
+| `Release` | tag 触发，产出 `*-windows-x64.zip` 与 `*-linux-x86_64.tar.gz` |

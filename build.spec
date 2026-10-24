@@ -4,10 +4,20 @@ import os
 
 block_cipher = None
 
+IS_WINDOWS = os.name == "nt"
+
 resources_dir = os.path.join(os.getcwd(), "ui", "resources")
-ffmpeg_path = os.path.join(resources_dir, "ffmpeg.exe")
 icon_path = os.path.join(resources_dir, "project-icon.jpg")
 license_path = os.path.join(resources_dir, "LICENSE.ffmpeg")
+
+# Windows 用 ffmpeg.exe，Linux/WSL2 用 ffmpeg；都没有就不打包，
+# 应用会在缺少 ffmpeg 时直接识别 wav/flac 并给出安装提示。
+ffmpeg_path = ""
+for _name in (("ffmpeg.exe", "ffmpeg") if IS_WINDOWS else ("ffmpeg", "ffmpeg.exe")):
+    _candidate = os.path.join(resources_dir, _name)
+    if os.path.isfile(_candidate):
+        ffmpeg_path = _candidate
+        break
 
 datas = []
 
@@ -18,7 +28,7 @@ try:
 except Exception:
     pass
 
-if os.path.isfile(ffmpeg_path):
+if ffmpeg_path:
     datas.append((ffmpeg_path, "ui/resources"))
 if os.path.isfile(icon_path):
     datas.append((icon_path, "ui/resources"))
@@ -115,5 +125,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=os.path.join(resources_dir, "project-icon.jpg") if os.path.isfile(os.path.join(resources_dir, "project-icon.jpg")) else None,
+    icon=icon_path if (IS_WINDOWS and os.path.isfile(icon_path)) else None,
 )
